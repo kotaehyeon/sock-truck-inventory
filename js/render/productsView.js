@@ -1,3 +1,13 @@
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[c]));
+}
+
 export function renderProductsTable(products) {
   if (products.length === 0) {
     return `<p class="empty-message">등록된 상품이 없습니다.</p>`;
@@ -6,16 +16,16 @@ export function renderProductsTable(products) {
   const rows = products
     .map(
       (p) => `
-    <tr data-product-id="${p.id}">
-      <td>${p.name}</td>
-      <td>${p.design}</td>
-      <td>${p.color}</td>
+    <tr data-product-id="${escapeHtml(p.id)}">
+      <td>${escapeHtml(p.name)}</td>
+      <td>${escapeHtml(p.design)}</td>
+      <td>${escapeHtml(p.color)}</td>
       <td>${p.costPrice}원</td>
-      <td>${p.supplier}</td>
+      <td>${escapeHtml(p.supplier)}</td>
       <td>${p.minStock}</td>
       <td>
-        <button class="edit-product" data-product-id="${p.id}">수정</button>
-        <button class="delete-product" data-product-id="${p.id}">삭제</button>
+        <button class="edit-product" data-product-id="${escapeHtml(p.id)}">수정</button>
+        <button class="delete-product" data-product-id="${escapeHtml(p.id)}">삭제</button>
       </td>
     </tr>`
     )

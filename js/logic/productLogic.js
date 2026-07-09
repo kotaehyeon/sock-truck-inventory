@@ -1,6 +1,9 @@
 export function addProduct(products, { name, design, color, costPrice, supplier, minStock }) {
-  const nextNumber = products.length + 1;
-  const id = `p${String(nextNumber).padStart(6, "0")}`;
+  const maxNumber = products.reduce((max, p) => {
+    const num = parseInt(p.id.slice(1), 10);
+    return Number.isNaN(num) ? max : Math.max(max, num);
+  }, 0);
+  const id = `p${String(maxNumber + 1).padStart(6, "0")}`;
   return [...products, { id, name, design, color, costPrice, supplier, minStock }];
 }
 

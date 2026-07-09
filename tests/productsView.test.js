@@ -25,3 +25,20 @@ test("renderProductsTable shows empty message when no products", () => {
   const html = renderProductsTable([]);
   assert.match(html, /등록된 상품이 없습니다/);
 });
+
+test("renderProductsTable escapes HTML in product fields", () => {
+  const products = [
+    {
+      id: "p000001",
+      name: '<img src=x onerror="alert(1)">',
+      design: "d",
+      color: "c",
+      costPrice: 1000,
+      supplier: "s",
+      minStock: 1,
+    },
+  ];
+  const html = renderProductsTable(products);
+  assert.doesNotMatch(html, /<img src=x onerror/);
+  assert.match(html, /&lt;img src=x onerror/);
+});

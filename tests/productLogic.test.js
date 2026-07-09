@@ -47,3 +47,13 @@ test("deleteProduct removes matching product", () => {
   assert.equal(result.length, 1);
   assert.equal(result[0].id, "p000002");
 });
+
+test("addProduct does not reuse an id after a product is deleted", () => {
+  let products = addProduct([], { name: "A", design: "d", color: "c", costPrice: 1, supplier: "s", minStock: 1 });
+  products = addProduct(products, { name: "B", design: "d", color: "c", costPrice: 1, supplier: "s", minStock: 1 });
+  products = deleteProduct(products, "p000001");
+  products = addProduct(products, { name: "C", design: "d", color: "c", costPrice: 1, supplier: "s", minStock: 1 });
+  const ids = products.map((p) => p.id);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.equal(products[products.length - 1].id, "p000003");
+});
