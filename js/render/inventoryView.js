@@ -20,6 +20,7 @@ export function renderInventoryForm(products, inventory) {
       <div class="inventory-row ${lowStockClass}" data-product-id="${escapeHtml(product.id)}">
         <label>${escapeHtml(product.name)} (최소 ${product.minStock})</label>
         <input type="number" min="0" value="${qty}" data-qty-input="${escapeHtml(product.id)}" />
+        <button type="button" data-add-to-order="${escapeHtml(product.id)}">발주 담기</button>
       </div>`;
     })
     .join("");

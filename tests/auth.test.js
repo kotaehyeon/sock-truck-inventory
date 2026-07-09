@@ -6,6 +6,8 @@ import {
   setStoredToken,
   isUnlocked,
   setUnlocked,
+  getEffectivePassword,
+  setStoredPassword,
 } from "../js/auth.js";
 
 function makeStorage() {
@@ -33,4 +35,15 @@ test("unlocked flag round-trips through storage adapter", () => {
   assert.equal(isUnlocked(storage), false);
   setUnlocked(storage);
   assert.equal(isUnlocked(storage), true);
+});
+
+test("getEffectivePassword falls back to default when nothing stored", () => {
+  const storage = makeStorage();
+  assert.equal(getEffectivePassword(storage, "1672"), "1672");
+});
+
+test("getEffectivePassword prefers a stored override password", () => {
+  const storage = makeStorage();
+  setStoredPassword(storage, "newpass");
+  assert.equal(getEffectivePassword(storage, "1672"), "newpass");
 });

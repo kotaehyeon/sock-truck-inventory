@@ -16,9 +16,10 @@ export function renderOrdersList(orders, products) {
   const rows = orders
     .map((order) => {
       const product = products.find((p) => p.id === order.productId);
-      const actionButton =
+      const actionButtons =
         order.status === "담김"
-          ? `<button data-mark-ordered="${escapeHtml(order.id)}">발주완료 처리</button>`
+          ? `<button data-edit-qty="${escapeHtml(order.id)}">수량 수정</button>
+             <button data-mark-ordered="${escapeHtml(order.id)}">발주완료 처리</button>`
           : "";
       return `
       <tr data-order-id="${escapeHtml(order.id)}">
@@ -26,7 +27,7 @@ export function renderOrdersList(orders, products) {
         <td>${order.qty}</td>
         <td>${escapeHtml(order.status)}</td>
         <td>${escapeHtml(order.orderedAt)}</td>
-        <td>${actionButton}</td>
+        <td>${actionButtons}</td>
       </tr>`;
     })
     .join("");

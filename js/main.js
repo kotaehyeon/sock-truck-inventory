@@ -1,6 +1,14 @@
 // js/main.js
 import { getFile, putFile } from "./githubApi.js";
-import { checkPassword, getStoredToken, setStoredToken, isUnlocked, setUnlocked } from "./auth.js";
+import {
+  checkPassword,
+  getStoredToken,
+  setStoredToken,
+  isUnlocked,
+  setUnlocked,
+  getEffectivePassword,
+  setStoredPassword,
+} from "./auth.js";
 import { GITHUB_OWNER, GITHUB_REPO, APP_PASSWORD } from "./config.js";
 import { addProduct, updateProduct, deleteProduct } from "./logic/productLogic.js";
 import { renderProductsTable } from "./render/productsView.js";
@@ -8,7 +16,7 @@ import { assignProduct, clearSlot } from "./logic/slotLogic.js";
 import { renderStandGrid } from "./render/slotsView.js";
 import { setQty } from "./logic/inventoryLogic.js";
 import { renderInventoryForm } from "./render/inventoryView.js";
-import { addToOrderList, markOrdered } from "./logic/orderLogic.js";
+import { addToOrderList, markOrdered, updateOrderQty } from "./logic/orderLogic.js";
 import { renderOrdersList } from "./render/ordersView.js";
 
 const state = {
@@ -113,7 +121,10 @@ function render() {
   } else if (state.route === "settings") {
     container.innerHTML = `
       <label>GitHub Token: <input id="token-input" type="password" value="${escapeHtml(getStoredToken(localStorage) ?? "")}" /></label>
-      <button id="save-token">토큰 저장</button>`;
+      <button id="save-token">토큰 저장</button>
+      <hr />
+      <label>새 비밀번호: <input id="password-input-settings" type="password" placeholder="새 비밀번호" /></label>
+      <button id="save-password">비밀번호 변경</button>`;
   }
   attachViewHandlers();
 }
@@ -255,6 +266,53 @@ function attachViewHandlers() {
       alert("토큰이 저장되었습니다.");
     });
   }
+
+  const savePasswordBtn = document.getElementById("save-password");
+  if (savePasswordBtn) {
+    savePasswordBtn.addEventListener("click", () => {
+      const newPassword = document.getElementById("password-input-settings").value;
+      if (!newPassword) {
+        alert("비밀번호를 입력하세요.");
+        return;
+      }
+      setStoredPassword(localStorage, newPassword);
+      alert("비밀번호가 변경되었습니다.");
+    });
+  }
+
+  document.querySelectorAll("[data-add-to-order]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const productId = btn.dataset.addToOrder;
+      const product = state.products.find((p) => p.id === productId);
+      if (!product) return;
+      const qty = prompt(`"${product.name}" 발주 수량을 입력하세요:`);
+      if (qty === null || qty.trim() === "") return;
+      state.orders = addToOrderList(state.orders, productId, Number(qty), today());
+      try {
+        await saveKey("orders");
+      } catch {
+        // error already shown in #sync-status by saveKey
+      }
+      alert("발주 목록에 담았습니다.");
+    });
+  });
+
+  document.querySelectorAll("[data-edit-qty]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const orderId = btn.dataset.editQty;
+      const order = state.orders.find((o) => o.id === orderId);
+      if (!order) return;
+      const qty = prompt("수량을 입력하세요:", order.qty);
+      if (qty === null || qty.trim() === "") return;
+      state.orders = updateOrderQty(state.orders, orderId, Number(qty));
+      try {
+        await saveKey("orders");
+      } catch {
+        // error already shown in #sync-status by saveKey
+      }
+      render();
+    });
+  });
 }
 
 function setupNav() {
@@ -277,7 +335,7 @@ async function init() {
 
   document.getElementById("unlock-button").addEventListener("click", async () => {
     const input = document.getElementById("password-input").value;
-    if (checkPassword(input, APP_PASSWORD)) {
+    if (checkPassword(input, getEffectivePassword(localStorage, APP_PASSWORD))) {
       setUnlocked(localStorage);
       lockScreen.hidden = true;
       app.hidden = false;

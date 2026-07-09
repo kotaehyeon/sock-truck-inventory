@@ -15,3 +15,9 @@ export function markOrdered(orders, orderId) {
     order.id === orderId ? { ...order, status: "발주완료" } : order
   );
 }
+
+export function updateOrderQty(orders, orderId, qty) {
+  return orders.map((order) =>
+    order.id === orderId ? { ...order, qty } : order
+  );
+}
