@@ -35,12 +35,26 @@ async function loadAll() {
   const token = getStoredToken(localStorage);
   const syncStatus = document.getElementById("sync-status");
   syncStatus.textContent = "불러오는 중...";
-  for (const [key, path] of Object.entries(DATA_FILES)) {
-    const { content, sha } = await getFile({ owner: GITHUB_OWNER, repo: GITHUB_REPO, path, token });
-    state[key] = content;
-    state.shas[key] = sha;
+  try {
+    for (const [key, path] of Object.entries(DATA_FILES)) {
+      const { content, sha } = await getFile({ owner: GITHUB_OWNER, repo: GITHUB_REPO, path, token });
+      state[key] = content;
+      state.shas[key] = sha;
+    }
+    syncStatus.textContent = "";
+  } catch (err) {
+    syncStatus.textContent = `불러오기 실패: ${err.message}`;
   }
-  syncStatus.textContent = "";
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[c]));
 }
 
 async function saveKey(key) {
@@ -91,14 +105,14 @@ function render() {
       ${renderOrdersList(state.orders, state.products)}
       <form id="add-order-form">
         <select name="productId">
-          ${state.products.map((p) => `<option value="${p.id}">${p.name}</option>`).join("")}
+          ${state.products.map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join("")}
         </select>
         <input name="qty" type="number" placeholder="수량" required />
         <button type="submit">발주 담기</button>
       </form>`;
   } else if (state.route === "settings") {
     container.innerHTML = `
-      <label>GitHub Token: <input id="token-input" type="password" value="${getStoredToken(localStorage) ?? ""}" /></label>
+      <label>GitHub Token: <input id="token-input" type="password" value="${escapeHtml(getStoredToken(localStorage) ?? "")}" /></label>
       <button id="save-token">토큰 저장</button>`;
   }
   attachViewHandlers();
@@ -118,7 +132,11 @@ function attachViewHandlers() {
         supplier: formData.get("supplier"),
         minStock: Number(formData.get("minStock")),
       });
-      await saveKey("products");
+      try {
+        await saveKey("products");
+      } catch {
+        // error already shown in #sync-status by saveKey
+      }
       render();
     });
   }
@@ -126,7 +144,39 @@ function attachViewHandlers() {
   document.querySelectorAll(".delete-product").forEach((btn) => {
     btn.addEventListener("click", async () => {
       state.products = deleteProduct(state.products, btn.dataset.productId);
-      await saveKey("products");
+      try {
+        await saveKey("products");
+      } catch {
+        // error already shown in #sync-status by saveKey
+      }
+      render();
+    });
+  });
+
+  document.querySelectorAll(".edit-product").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const product = state.products.find((p) => p.id === btn.dataset.productId);
+      if (!product) return;
+      const name = prompt("상품명", product.name);
+      if (name === null) return;
+      const design = prompt("디자인", product.design);
+      if (design === null) return;
+      const color = prompt("색상", product.color);
+      if (color === null) return;
+      const costPrice = prompt("사입가", product.costPrice);
+      if (costPrice === null) return;
+      const supplier = prompt("도매처", product.supplier);
+      if (supplier === null) return;
+      const minStock = prompt("최소재고", product.minStock);
+      if (minStock === null) return;
+      state.products = updateProduct(state.products, product.id, {
+        name, design, color, costPrice: Number(costPrice), supplier, minStock: Number(minStock),
+      });
+      try {
+        await saveKey("products");
+      } catch {
+        // error already shown in #sync-status by saveKey
+      }
       render();
     });
   });
@@ -146,7 +196,11 @@ function attachViewHandlers() {
         }
         state.slots = assignProduct(state.slots, slotId, product.id);
       }
-      await saveKey("slots");
+      try {
+        await saveKey("slots");
+      } catch {
+        // error already shown in #sync-status by saveKey
+      }
       render();
     });
   });
@@ -158,7 +212,11 @@ function attachViewHandlers() {
       document.querySelectorAll("[data-qty-input]").forEach((input) => {
         state.inventory = setQty(state.inventory, input.dataset.qtyInput, Number(input.value), today());
       });
-      await saveKey("inventory");
+      try {
+        await saveKey("inventory");
+      } catch {
+        // error already shown in #sync-status by saveKey
+      }
       render();
     });
   }
@@ -169,7 +227,11 @@ function attachViewHandlers() {
       e.preventDefault();
       const formData = new FormData(addOrderForm);
       state.orders = addToOrderList(state.orders, formData.get("productId"), Number(formData.get("qty")), today());
-      await saveKey("orders");
+      try {
+        await saveKey("orders");
+      } catch {
+        // error already shown in #sync-status by saveKey
+      }
       render();
     });
   }
@@ -177,7 +239,11 @@ function attachViewHandlers() {
   document.querySelectorAll("[data-mark-ordered]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       state.orders = markOrdered(state.orders, btn.dataset.markOrdered);
-      await saveKey("orders");
+      try {
+        await saveKey("orders");
+      } catch {
+        // error already shown in #sync-status by saveKey
+      }
       render();
     });
   });
