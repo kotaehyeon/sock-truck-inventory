@@ -47,6 +47,53 @@ test("putFile sends base64-encoded content with sha for update", async () => {
   assert.equal(result.sha, "new-sha");
 });
 
+test("getFile and putFile round-trip Korean text without Buffer (simulated browser)", async () => {
+  const originalBuffer = globalThis.Buffer;
+  // Simulate a browser: Buffer is not a declared global there, so a bare
+  // reference (not typeof) throws ReferenceError. Deleting it here forces
+  // the module's atob/btoa + TextEncoder/TextDecoder fallback path.
+  delete globalThis.Buffer;
+
+  try {
+    const fakeData = [{ id: "p000001", name: "발목양말" }];
+    let capturedBody;
+    globalThis.fetch = mock.fn(async (url, opts) => {
+      if (opts && opts.method === "PUT") {
+        capturedBody = JSON.parse(opts.body);
+        return { ok: true, json: async () => ({ content: { sha: "new-sha" } }) };
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          content: capturedBody.content,
+          sha: "abc123",
+        }),
+      };
+    });
+
+    const putResult = await putFile({
+      owner: "me",
+      repo: "sock-truck-inventory",
+      path: "data/products.json",
+      token: "tok",
+      content: fakeData,
+      sha: "abc123",
+      message: "update products",
+    });
+    assert.equal(putResult.sha, "new-sha");
+
+    const getResult = await getFile({
+      owner: "me",
+      repo: "sock-truck-inventory",
+      path: "data/products.json",
+      token: "tok",
+    });
+    assert.deepEqual(getResult.content, fakeData);
+  } finally {
+    globalThis.Buffer = originalBuffer;
+  }
+});
+
 test("getFile throws with readable message on non-ok response", async () => {
   globalThis.fetch = mock.fn(async () => ({
     ok: false,
