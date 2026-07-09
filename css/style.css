@@ -1,0 +1,16 @@
+/* css/style.css */
+body { font-family: -apple-system, sans-serif; margin: 0; padding: 0; }
+#lock-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 8px; }
+#nav-bar { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; background: #222; }
+#nav-bar button { padding: 8px 12px; }
+#view-container { padding: 12px; }
+.stand-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin-bottom: 16px; }
+.slot { border: 1px solid #ccc; padding: 8px 4px; text-align: center; font-size: 12px; cursor: pointer; }
+.slot.empty { background: #f5f5f5; color: #999; }
+.slot.filled { background: #d7f0d7; }
+.inventory-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; }
+.inventory-row.low-stock { background: #ffe5e5; }
+table { width: 100%; border-collapse: collapse; }
+th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+.error { color: red; }
+.empty-message { color: #888; }
